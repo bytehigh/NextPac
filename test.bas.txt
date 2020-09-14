@@ -103,6 +103,8 @@ REPEAT
     IF gameState=13 THEN LET %f=75: SPRITE 12,%f,%g,21,1: LET %g=%g+1: IF %g >= e THEN LET %g=%e: LET gameState=14: LET %g=0
     IF gameState=14 THEN LET gameState=15: SPRITE 22,%b,%e-32,30,1
 
+    REM check for sprite collisions using SPRITE OVER
+    REM todo
 
 
 
@@ -139,12 +141,6 @@ DEFPROC InitialisePlayfield()
     LOAD "jetman.spr" BANK 16,0,16383
     SPRITE BANK 16
     SPRITE CLEAR
-    REM Check for sprite collisions
-    IF % IN 12347& BIN 00000001 = BIN 00000001 THEN PRINT AT 1,0;"collided": ELSE PRINT AT 1,0;"       "
-    IF % IN 12347& BIN 00000001 = BIN 00000001 THEN PRINT AT 1,0;"collided": ELSE PRINT AT 1,0;"       "
-    PAUSE 0
-    STOP
-
     SPRITE BORDER 0
     SPRITE PRINT 1
     BORDER 0
