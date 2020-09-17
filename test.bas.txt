@@ -1,29 +1,30 @@
 #autoline 10,10
 
+RUN AT 3
 PROC InitialisePlayfield()
 
-LET %x=50
-LET %y=150
-LET %h=16: REM Height/width of sprites
-LET %a=0: REM Current frame of animation
-LET %d=0: REM Direction - 0=right; 1=left
-let %u=0: REM Flying? 0=false, walking; 1=true, flying 
-LET %k=4: REM Number of keyframes of animation
-LET %s=1: REM Number of pixels to move each time
+%x=50
+%y=150
+%h=16: ;Height/width of sprites
+%a=0: ;Current frame of animation
+%d=0: ;Direction - 0=right; 1=left
+%u=0: ;Flying? 0=false, walking; 1=true, flying 
+%k=4: ;Number of keyframes of animation
+%s=1: ;Number of pixels to move each time
 
-LET %f=0: REM Fuel x position
-LET %g=0: REM Fuel y position
-LET %p=0: REM Power-up x position
-LET %q=0: REM Power-up y position
-LET %b=190: REM Ship x position
-LET %c=0: REM Ship y position
+%f=0: ;Fuel x position
+%g=0: ;Fuel y position
+%p=0: ;Power-up x position
+%q=0: ;Power-up y position
+%b=190: ;Ship x position
+%c=0: ;Ship y position
 
-let %e=192: Rem Ground level for sprites
+%e=192: ;Ground level for sprites
 
-LET fuelCarry=0
+fuelCarry=0
 
 REM Game states - TODO add power-ups (e.g. radioactive)
-LET gameState=0
+gameState=0
 DIM s(14)
 DIM o(14)
 o(1)=21
@@ -70,8 +71,8 @@ PROC SetupLevel()
 
 REM Game loop
 REPEAT
-    LET %o=%u*(k*2): REM This is the pattern offset to the next Sprite
-    LET %z=%d*8+1: REM Work out the correct sprite flags (rotation based on left or right direction) 
+    %o=%u*(k*2): REM This is the pattern offset to the next Sprite
+    %z=%d*8+1: REM Work out the correct sprite flags (rotation based on left or right direction) 
 
     REM Display Jetman (either walking or flying)
     REM Top of Jetman is the anchor sprite, a composite sprite so that the Fuel sprite is not rotated when Jetman changes direction
@@ -103,9 +104,9 @@ REPEAT
     IF % SPRITE OVER (0,2) THEN PROC HitFuel(): ELSE PRINT AT 0,0;"     "
 
     REM Check keypresses
-    IF % IN 57342& BIN 0000010 =0 THEN LET %x=%x-s: PROC MoveLeft()
-    IF % IN 57342& BIN 0000001 =0 THEN LET %x=%x+s: PROC MoveRight()
-    IF % IN 32766& BIN 0000001 =0 THEN LET %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
+    IF % IN 57342& BIN 0000010 =0 THEN %x=%x-s: PROC MoveLeft()
+    IF % IN 57342& BIN 0000001 =0 THEN %x=%x+s: PROC MoveRight()
+    IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
 
     SPRITE MOVE
 
@@ -113,13 +114,13 @@ REPEAT UNTIL INKEY$ ="q"
 STOP
 
 DEFPROC stateAction()
-    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO %e STEP 1 RUN ,22,2,0,0: LET gameState=1: ENDPROC
-    IF gameState=1 THEN IF % SPRITE AT (20,1)=e THEN LET gameState=2: ENDPROC
-    IF gameState=2 THEN SPRITE 21,%b,%c,23,1: SPRITE CONTINUE 21,%b,%c TO %e-16 STEP 1 RUN ,23,2,0,0: LET gameState=3: ENDPROC
-    IF gameState=3 THEN IF % SPRITE AT (21,1)=(e-16) THEN LET gameState=4: ENDPROC
-    IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO %e-32 STEP 1 RUN ,24,2,0,0: LET gameState=5: ENDPROC
-    IF gameState=5 THEN IF % SPRITE AT (22,1)=(e-32) THEN LET gameState=6: ENDPROC
-    IF gameState=6 THEN PROC DropFuel(): LET gameState=18: ENDPROC
+    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO %e STEP 1 RUN ,22,2,0,0: gameState=1: ENDPROC
+    IF gameState=1 THEN IF % SPRITE AT (20,1)=e THEN gameState=2: ENDPROC
+    IF gameState=2 THEN SPRITE 21,%b,%c,23,1: SPRITE CONTINUE 21,%b,%c TO %e-16 STEP 1 RUN ,23,2,0,0: gameState=3: ENDPROC
+    IF gameState=3 THEN IF % SPRITE AT (21,1)=(e-16) THEN gameState=4: ENDPROC
+    IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO %e-32 STEP 1 RUN ,24,2,0,0: gameState=5: ENDPROC
+    IF gameState=5 THEN IF % SPRITE AT (22,1)=(e-32) THEN gameState=6: ENDPROC
+    IF gameState=6 THEN PROC DropFuel(): gameState=18: ENDPROC
     REM When gameState is 7 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
     IF gameState=8 THEN PROC DropFuel(): ENDPROC
     REM When gameState is 9 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
@@ -133,39 +134,39 @@ DEFPROC stateAction()
     REM When gameState is 17 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
     REM Ship take off. TODO: make ship flash!
     IF gameState=18 THEN PROC TakeOff(): ENDPROC
-    rem When ship is off the screen, it's the end of the level!
-    IF gameState=19 THEN IF % SPRITE AT (20,1)=0 THEN LET gameState=20: ENDPROC
+    REM When ship is off the screen, it's the end of the level!
+    IF gameState=19 THEN IF % SPRITE AT (20,1)=0 THEN gameState=20: ENDPROC
 
 ENDPROC
 
 DEFPROC SetupLevel()
-    LET %i=0: REM First ship fuel pattern
+    %i=0: ; First ship fuel pattern
 ENDPROC
 
 DEFPROC MoveLeft()
-    IF %d=0 THEN LET %d=1
-    LET %a=%a+2
-    IF %a=k THEN LET %a=0
+    IF %d=0 THEN %d=1
+    %a=%a+2
+    IF %a=k THEN %a=0
 ENDPROC
 
 DEFPROC MoveRight()
-    IF %d=1 THEN LET %d=0
-    LET %a=%a+2
-    IF %a=k THEN LET %a=0
+    IF %d=1 THEN %d=0
+    %a=%a+2
+    IF %a=k THEN %a=0
 ENDPROC
 
 DEFPROC WrapLeft()
     REM TODO change to anchor and relative sprites
     SPRITE 10,%x+256,%y,%a+o,%z: SPRITE 11,%x+256,%y+h,%a+o+1,%z
     REM Hide duplicate sprite when Jetman completes transition from left to right
-    IF %x < 16 THEN SPRITE 10,%x+256,%y,%a+o,0: SPRITE 11,%x+256,%y+h,%a+o+1,0: LET %x=%x+256
+    IF %x < 16 THEN SPRITE 10,%x+256,%y,%a+o,0: SPRITE 11,%x+256,%y+h,%a+o+1,0: %x=%x+256
 ENDPROC
 
 DEFPROC WrapRight()
     REM TODO change to anchor and relative sprites
     SPRITE 10,%x-273+16,%y,%a+o,%z: SPRITE 11,%x-273+16,%y+h,%a+o+1,%z
     REM Hide duplicate sprite when Jetman completes transition from right to left
-    IF %x > 289 THEN SPRITE 10,%x-273+16,%y,%a+o,0: SPRITE 11,%x-273+16,%y+h,%a+o+1,0: LET %x=%x-289+32
+    IF %x > 289 THEN SPRITE 10,%x-273+16,%y,%a+o,0: SPRITE 11,%x-273+16,%y+h,%a+o+1,0: %x=%x-289+32
 ENDPROC
 
 DEFPROC FlyUp()
@@ -173,8 +174,8 @@ DEFPROC FlyUp()
 ENDPROC
 
 DEFPROC FlyDown()
-    IF %u THEN LET %y=%y+1
-    IF %y>=(192-6) THEN LET %u=0
+    IF %u THEN %y=%y+1
+    IF %y>=(192-6) THEN %u=0
 ENDPROC
 
 DEFPROC InitialisePlayfield()
@@ -189,18 +190,18 @@ DEFPROC InitialisePlayfield()
     LOCAL x
     LOCAL y
     REM Position platform 1
-    LET x=60: LET y=90
+    x=60: y=90
     SPRITE 30,x,y,16,1
     SPRITE 31,x+16,y,17,1
     SPRITE 32,x+32,y,18,1
 
     REM Position platform 2
-    LET x=150: LET y=120
+    x=150: y=120
     SPRITE 33,x,y,19,1
     SPRITE 34,x+16,y,20,1
 
     REM Position platform 3
-    LET x=220: LET y=75
+    x=220: y=75
     SPRITE 35,x,y,16,1
     SPRITE 36,x+16,y,17,1
     SPRITE 37,x+32,y,18,1
@@ -211,10 +212,10 @@ DEFPROC HitPlatform()
 ENDPROC
 
 DEFPROC HitShip()
-    LOCAL %s: LET %s=%i / 2
-    LOCAL %p: LET %p=%i+25
+    LOCAL %s: %s=%i / 2
+    LOCAL %p: %p=%i+25
     IF gameState > 5 THEN PRINT AT 0,0;"Bosh! Offset:";%s
-    IF fuelCarry=1 THEN SPRITE %s+20,%b,%e-(16*s),%p,1: SPRITE 2,0,0,21,0: LET fuelCarry=0: LET %i=%i+1: LET gameState=gameState+1
+    IF fuelCarry=1 THEN SPRITE %s+20,%b,%e-(16*s),%p,1: SPRITE 2,0,0,21,0: fuelCarry=0: %i=%i+1: gameState=gameState+1
 ENDPROC
 
 DEFPROC HitFuel()
@@ -226,25 +227,19 @@ DEFPROC HitFuel()
 ENDPROC
 
 DEFPROC DropFuel()
-    LET %f=40
+    %f=40
     SPRITE 2,%f,%g,21,1
     SPRITE CONTINUE 2,%f,%g TO %e STEP 1 RUN ,21,2,0,0
-    LET gameState=gameState+1
+    gameState=gameState+1
 ENDPROC
 
 DEFPROC TakeOff()
     SPRITE CONTINUE 20,%b,%c TO %e STEP -1 RUN ,,BIN 00000011
     SPRITE CONTINUE 21,%b,%c TO %e-16 STEP -1 RUN ,,BIN 00000011
     SPRITE CONTINUE 22,%b,%c TO %e-32 STEP -1 RUN ,,BIN 00000011
-    LET gameState=gameState+1
-
-
+    gameState=gameState+1
 ENDPROC
 
 DEFPROC CollideActions()
-    print at 1, 0; "collided"
+    PRINT AT 1,0;"collided"
 ENDPROC
-
-
-
-
