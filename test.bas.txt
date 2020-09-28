@@ -3,8 +3,6 @@
 RUN AT 3
 PROC InitialisePlayfield()
 
-%x=50
-%y=194
 %h=16: ;Height/width of sprites
 %a=0: ;Current frame of animation
 %d=0: ;Direction - 0=right; 1=left
@@ -20,6 +18,9 @@ PROC InitialisePlayfield()
 %c=0: ;Ship y position
 
 %e=200: ;Ground level for sprites
+
+%x=50: ;Initial Jetman X position
+%y=194: ;Initial Jetman Y position
 
 fuelCarry=0
 alien=0
@@ -204,25 +205,6 @@ DEFPROC InitialisePlayfield()
     TILE BANK 16:; point tilemap to spritesheet
     TILE DIM 17,0,16,16:; using tile bank 14, offset 0, tile 16 wide, tile size 16
     TILE 16,12:; print tile for 16x12
-
-    LOCAL x
-    LOCAL y
-    REM Position platform 1 [Sprites 30-32]
-    x=60: y=90
-    SPRITE 30,x,y,16,1
-    SPRITE 31,x+16,y,17,1
-    SPRITE 32,x+32,y,18,1
-
-    REM Position platform 2 [Sprites 33-34]
-    x=150: y=120
-    SPRITE 33,x,y,19,1
-    SPRITE 34,x+16,y,20,1
-
-    REM Position platform 3 [Sprites 35-37]
-    x=220: y=75
-    SPRITE 35,x,y,16,1
-    SPRITE 36,x+16,y,17,1
-    SPRITE 37,x+32,y,18,1
 ENDPROC
 
 DEFPROC Aliens()
