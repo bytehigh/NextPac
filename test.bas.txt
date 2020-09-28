@@ -4,13 +4,13 @@ RUN AT 3
 PROC InitialisePlayfield()
 
 %x=50
-%y=150
+%y=194
 %h=16: ;Height/width of sprites
 %a=0: ;Current frame of animation
 %d=0: ;Direction - 0=right; 1=left
 %u=0: ;Flying? 0=false, walking; 1=true, flying 
 %k=4: ;Number of keyframes of animation
-%s=1: ;Number of pixels to move each time
+%s=4: ;Number of pixels to move each time
 
 %f=0: ;Fuel x position
 %g=0: ;Fuel y position
@@ -19,9 +19,10 @@ PROC InitialisePlayfield()
 %b=190: ;Ship x position
 %c=0: ;Ship y position
 
-%e=192: ;Ground level for sprites
+%e=200: ;Ground level for sprites
 
 fuelCarry=0
+alien=0
 
 REM Game states - TODO add power-ups (e.g. radioactive)
 gameState=0
@@ -53,6 +54,7 @@ REM Sprites - order is important for relative sprites
 REM 0 = Jetman top
 REM 1 = Jetman bottom (relative to Jetman top)
 REM 2 = Fuel (relative when picked-up)
+REM 5 = Alien
 REM 10 = Jetman wrap-around top
 REM 11 = Jetman wrap-around bottom
 REM 20 = Ship 1, bottom
@@ -81,6 +83,8 @@ REPEAT
     REM SPRITE 1,%x,%y+h,%a+o+1,%z
     SPRITE -1,0,%h,1,%z,2 
 
+    PROC Aliens()
+
     REM Jetman left to right wrap around
     IF %x < 32 THEN PROC WrapLeft()
     REM Jetman right to left wrap around
@@ -95,13 +99,18 @@ REPEAT
 
     REM check for sprite collisions using SPRITE OVER
     REM check if Jetman has hit a platform. Print statements for debug
-    IF % SPRITE OVER (0,30 TO 37) THEN PROC HitPlatform(): ELSE PRINT AT 0,0;"     "
+    IF % SPRITE OVER (0,30 TO 37) THEN PROC PlatformHit(): ELSE PRINT AT 0,0;"     "
 
-    REM check if Jetman has touched the spaceship
+    REM check if Alien has hit a platform. Print statements for debug
+    hitPlatform=% SPRITE OVER (5,30 TO 37)
+    IF hitPlatform THEN PROC PlatformCrash(hitPlatform): ELSE PRINT AT 0,0;"     "
+
+    REM check if Jetman has touched the spaceship. TODO - replace sprite over with checking the x position
     IF % SPRITE OVER (0,20 TO 22) THEN PROC HitShip(): ELSE PRINT AT 0,0;"     "
 
     REM check if Jetman has touched the fuel
-    IF % SPRITE OVER (0,2) THEN PROC HitFuel(): ELSE PRINT AT 0,0;"     "
+    %t=fuelCarry
+    IF %t=0 AND SPRITE OVER (0,2) THEN PROC HitFuel(): ELSE PRINT AT 0,0;"     "
 
     REM Check keypresses
     IF % IN 57342& BIN 0000010 =0 THEN %x=%x-s: PROC MoveLeft()
@@ -120,7 +129,7 @@ DEFPROC stateAction()
     IF gameState=3 THEN IF % SPRITE AT (21,1)=(e-16) THEN gameState=4: ENDPROC
     IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO %e-32 STEP 1 RUN ,24,2,0,0: gameState=5: ENDPROC
     IF gameState=5 THEN IF % SPRITE AT (22,1)=(e-32) THEN gameState=6: ENDPROC
-    IF gameState=6 THEN PROC DropFuel(): gameState=18: ENDPROC
+    IF gameState=6 THEN PROC DropFuel(): ENDPROC
     REM When gameState is 7 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
     IF gameState=8 THEN PROC DropFuel(): ENDPROC
     REM When gameState is 9 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
@@ -174,41 +183,65 @@ DEFPROC FlyUp()
 ENDPROC
 
 DEFPROC FlyDown()
-    IF %u THEN %y=%y+1
-    IF %y>=(192-6) THEN %u=0
+    IF %u THEN %y=%y+s
+    IF %y>=(e-6) THEN %u=0: %y=%e-6
 ENDPROC
 
 DEFPROC InitialisePlayfield()
+    LAYER 2,1
+    BORDER 0
+    PAPER 0
+    CLS
+
     LOAD "jetman.spr" BANK 16,0,16383
     SPRITE BANK 16
     SPRITE CLEAR
     SPRITE BORDER 0
     SPRITE PRINT 1
     SPRITE STOP
-    BORDER 0
+
+    LOAD "jetpac.map" BANK 17:; tile map
+    TILE BANK 16:; point tilemap to spritesheet
+    TILE DIM 17,0,16,16:; using tile bank 14, offset 0, tile 16 wide, tile size 16
+    TILE 16,12:; print tile for 16x12
 
     LOCAL x
     LOCAL y
-    REM Position platform 1
+    REM Position platform 1 [Sprites 30-32]
     x=60: y=90
     SPRITE 30,x,y,16,1
     SPRITE 31,x+16,y,17,1
     SPRITE 32,x+32,y,18,1
 
-    REM Position platform 2
+    REM Position platform 2 [Sprites 33-34]
     x=150: y=120
     SPRITE 33,x,y,19,1
     SPRITE 34,x+16,y,20,1
 
-    REM Position platform 3
+    REM Position platform 3 [Sprites 35-37]
     x=220: y=75
     SPRITE 35,x,y,16,1
     SPRITE 36,x+16,y,17,1
     SPRITE 37,x+32,y,18,1
 ENDPROC
 
-DEFPROC HitPlatform()
+DEFPROC Aliens()
+rem    IF alienDeath THEN sprite continue 5,,
+    IF alien=1 THEN ENDPROC
+
+    SPRITE 5,16,40,31,1
+    SPRITE CONTINUE 5,16 TO 304 STEP 1 RUN ,40 TO 192 STEP 1 RUN ,31 TO 32,2,1,0
+    alien=1
+ENDPROC
+
+DEFPROC PlatformHit()
     PRINT AT 0,0;"Bash!"
+ENDPROC
+
+REM Alien hits platform and explodes
+DEFPROC PlatformCrash(platform)
+    PRINT AT 0,0;"KERANNGGG!"
+    alienDeath=1
 ENDPROC
 
 DEFPROC HitShip()
