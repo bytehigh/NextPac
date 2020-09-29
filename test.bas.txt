@@ -93,30 +93,32 @@ REPEAT
 
     REM Debug print
     REM PRINT AT 0,0; "x "; %x; " y: "; %y; "   "
+    PRINT AT 2,0;"fuelCarry is ";fuelCarry
     PRINT AT 0,15; "gameState "; gameState; "   "
 
     REM carry out actions relating to the current game state
     PROC stateAction()
 
-    REM check for sprite collisions using SPRITE OVER
     REM check if Jetman has hit a platform. Print statements for debug
-    IF % SPRITE OVER (0,30 TO 37) THEN PROC PlatformHit(): ELSE PRINT AT 0,0;"     "
+    IF % SPRITE OVER (0,30 TO 37) THEN PROC PlatformHit()
 
     REM check if Alien has hit a platform. Print statements for debug
     hitPlatform=% SPRITE OVER (5,30 TO 37)
-    IF hitPlatform THEN PROC PlatformCrash(hitPlatform): ELSE PRINT AT 0,0;"     "
+    IF hitPlatform THEN PROC PlatformCrash(hitPlatform)
 
-    REM check if Jetman has touched the spaceship. TODO - replace sprite over with checking the x position
-    IF % SPRITE OVER (0,20 TO 22) THEN PROC HitShip(): ELSE PRINT AT 0,0;"     "
+    REM check if Jetman has flown over or touched the spaceship
+    %t=fuelCarry
+    IF % SPRITE OVER (0,20 TO 22) THEN PROC JetManHitShip(): ELSE IF %x=b AND t=1 THEN PROC DropFuel(%x,%y): fuelCarry=2
 
     REM check if Jetman has touched the fuel
     %t=fuelCarry
-    IF %t=0 AND SPRITE OVER (0,2) THEN PROC HitFuel(): ELSE PRINT AT 0,0;"     "
+    IF %t=0 AND SPRITE OVER (0,2) THEN PROC HitFuel()
 
     REM Check keypresses
     IF % IN 57342& BIN 0000010 =0 THEN %x=%x-s: PROC MoveLeft()
     IF % IN 57342& BIN 0000001 =0 THEN %x=%x+s: PROC MoveRight()
     IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
+    IF %y <= 32 THEN %y=32
 
     SPRITE MOVE
 
@@ -124,24 +126,32 @@ REPEAT UNTIL INKEY$ ="q"
 STOP
 
 DEFPROC stateAction()
-    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO %e STEP 1 RUN ,22,2,0,0: gameState=1: ENDPROC
+    %f=40
+
+    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO %e STEP 1 RUN ,22,2,0,0:gameState=1: ENDPROC
     IF gameState=1 THEN IF % SPRITE AT (20,1)=e THEN gameState=2: ENDPROC
     IF gameState=2 THEN SPRITE 21,%b,%c,23,1: SPRITE CONTINUE 21,%b,%c TO %e-16 STEP 1 RUN ,23,2,0,0: gameState=3: ENDPROC
     IF gameState=3 THEN IF % SPRITE AT (21,1)=(e-16) THEN gameState=4: ENDPROC
     IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO %e-32 STEP 1 RUN ,24,2,0,0: gameState=5: ENDPROC
     IF gameState=5 THEN IF % SPRITE AT (22,1)=(e-32) THEN gameState=6: ENDPROC
-    IF gameState=6 THEN PROC DropFuel(): ENDPROC
+    IF gameState=6 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 7 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
-    IF gameState=8 THEN PROC DropFuel(): ENDPROC
+    IF gameState=7 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
+    IF gameState=8 AND fuelCarry <> 2 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 9 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
-    IF gameState=10 THEN PROC DropFuel(): ENDPROC
+    IF gameState=9 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
+    IF gameState=10 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 11 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
-    IF gameState=12 THEN PROC DropFuel(): ENDPROC
+    IF gameState=11 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
+    IF gameState=12 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 13 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
-    IF gameState=14 THEN PROC DropFuel(): ENDPROC
+    IF gameState=13 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
+    IF gameState=14 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 15 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
-    IF gameState=16 THEN PROC DropFuel(): ENDPROC
+    IF gameState=15 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
+    IF gameState=16 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 17 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
+    IF gameState=17 AND fuelCarry=2 THEN IF % SPRITE OVER (2,20 TO 22) THEN PROC FuelHitShip()
     REM Ship take off. TODO: make ship flash!
     IF gameState=18 THEN PROC TakeOff(): ENDPROC
     REM When ship is off the screen, it's the end of the level!
@@ -192,6 +202,7 @@ DEFPROC InitialisePlayfield()
     LAYER 2,1
     BORDER 0
     PAPER 0
+    INK 7
     CLS
 
     LOAD "jetman.spr" BANK 16,0,16383
@@ -226,12 +237,38 @@ DEFPROC PlatformCrash(platform)
     alienDeath=1
 ENDPROC
 
-DEFPROC HitShip()
-    LOCAL %s: %s=%i / 2
-    LOCAL %p: %p=%i+25
-    IF gameState > 5 THEN PRINT AT 0,0;"Bosh! Offset:";%s
-    IF fuelCarry=1 THEN SPRITE %s+20,%b,%e-(16*s),%p,1: SPRITE 2,0,0,21,0: fuelCarry=0: %i=%i+1: gameState=gameState+1
+DEFPROC JetManHitShip()
+    REM Only carry on if the fuel is dropping
+    IF fuelCarry <> 1 THEN ENDPROC
+
+    REM Sprite is the ship pattern
+    LOCAL %s:%s=%i/2
+    LOCAL %p:%p=%i+25
+
+    REM If Jetman is carrying the fuel switch to the ship sprite with fuel in it and hide the fuel
+    SPRITE %s+20,%b,%e-(16*s),%p,1
+    SPRITE 2,0,0,21,0
+    fuelCarry=0
+    %i=%i+1
+    gameState=gameState+1
 ENDPROC
+
+DEFPROC FuelHitShip()
+    REM Only carry on if the fuel is dropping
+    IF fuelCarry <> 2 THEN ENDPROC
+
+    REM Sprite is the ship pattern
+    LOCAL %s:%s=%i/2
+    LOCAL %p:%p=%i+25
+
+    REM If fuel is dropping switch to the ship sprite with fuel in it and hide the fuel
+    SPRITE %s+20,%b,%e-(16*s),%p,1
+    SPRITE 2,0,0,21,0
+    fuelCarry=0
+    %i=%i+1
+    gameState=gameState+1
+ENDPROC
+
 
 DEFPROC HitFuel()
     PRINT AT 0,0;"Boom!"
@@ -241,11 +278,11 @@ DEFPROC HitFuel()
     fuelCarry=1
 ENDPROC
 
-DEFPROC DropFuel()
-    %f=40
-    SPRITE 2,%f,%g,21,1
-    SPRITE CONTINUE 2,%f,%g TO %e STEP 1 RUN ,21,2,0,0
-    gameState=gameState+1
+DEFPROC DropFuel(%x,%y)
+    IF fuelCarry=2 THEN ENDPROC
+
+    SPRITE 2,%x,%y,21,1
+    SPRITE CONTINUE 2,%x,%y TO %e STEP 1 RUN ,21,2,0,0
 ENDPROC
 
 DEFPROC TakeOff()
