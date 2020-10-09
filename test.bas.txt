@@ -61,9 +61,9 @@ REM 11 = Jetman wrap-around bottom
 REM 20 = Ship 1, bottom
 REM 21 = Ship 1, middle
 REM 22 = Ship 1, top
-REM 30 = Platform 1, sprite 1
-REM 31 = Platform 1, sprite 2
-REM 32 = Platform 1, sprite 3
+REM 16 = Platform 1, sprite 1
+REM 17 = Platform 1, sprite 2
+REM 18 = Platform 1, sprite 3
 REM 33 = Platform 2, sprite 1
 REM 34 = Platform 2, sprite 2
 REM 35 = Platform 3, sprite 1
@@ -93,14 +93,11 @@ REPEAT
 
     REM Debug print
     REM PRINT AT 0,0; "x "; %x; " y: "; %y; "   "
-    PRINT AT 2,0;"fuelCarry is ";fuelCarry
+    REM PRINT AT 2,0;"fuelCarry is ";fuelCarry
     PRINT AT 0,15; "gameState "; gameState; "   "
 
     REM carry out actions relating to the current game state
     PROC stateAction()
-
-    REM check if Jetman has hit a platform. Print statements for debug
-    IF % SPRITE OVER (0,30 TO 37) THEN PROC PlatformHit()
 
     REM check if Alien has hit a platform. Print statements for debug
     hitPlatform=% SPRITE OVER (5,30 TO 37)
@@ -114,11 +111,22 @@ REPEAT
     %t=fuelCarry
     IF %t=0 AND SPRITE OVER (0,2) THEN PROC HitFuel()
 
+    REM check if Jetman has hit a platform. Print statements for debug
+    %z=% SPRITE OVER (0,30 TO 37)
+    PRINT AT 4,0;%z
+    IF %z=0 THEN PRINT AT 4,4;"!": ELSE PRINT AT 4,4;" "
+
     REM Check keypresses
-    IF % IN 57342& BIN 0000010 =0 THEN %x=%x-s: PROC MoveLeft()
-    IF % IN 57342& BIN 0000001 =0 THEN %x=%x+s: PROC MoveRight()
-    IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
-    IF %y <= 32 THEN %y=32
+    IF % IN 57342& BIN 0000010 =0 THEN IF %z=0 THEN PROC MoveLeft()
+REM : ELSE IF %z > 0 THEN %x=%x+(s*2)
+    IF % IN 57342& BIN 0000001 =0 THEN IF %z=0 THEN PROC MoveRight()
+REM : ELSE IF %z > 0 THEN %x=%x-(s*2)
+
+rem    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(): ELSE IF %z > 0 THEN %x=%x-(s*2)
+    rem IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
+    IF % IN 32766& BIN 0000001 =0 THEN PROC FlyUp(): ELSE IF %y+16 > SPRITE AT (z,1) THEN PROC FlyDown()
+
+
 
     SPRITE MOVE
 
@@ -164,12 +172,16 @@ DEFPROC SetupLevel()
 ENDPROC
 
 DEFPROC MoveLeft()
+    %x=%x-s
+
     IF %d=0 THEN %d=1
     %a=%a+2
     IF %a=k THEN %a=0
 ENDPROC
 
 DEFPROC MoveRight()
+    %x=%x+s
+
     IF %d=1 THEN %d=0
     %a=%a+2
     IF %a=k THEN %a=0
@@ -190,7 +202,9 @@ DEFPROC WrapRight()
 ENDPROC
 
 DEFPROC FlyUp()
-    %u = 1
+    %y=%y-s 
+    %u=1
+    IF %y <= 32 THEN %y=32
 ENDPROC
 
 DEFPROC FlyDown()
@@ -215,7 +229,26 @@ DEFPROC InitialisePlayfield()
     LOAD "jetpac.map" BANK 17:; tile map
     TILE BANK 16:; point tilemap to spritesheet
     TILE DIM 17,0,16,16:; using tile bank 14, offset 0, tile 16 wide, tile size 16
-    TILE 16,12:; print tile for 16x12
+    TILE 16,12: ; print tile for 16x12
+
+    LOCAL x
+    LOCAL y
+    REM Position platform 1 [Sprites 30-32]
+    x=60: y=90
+    SPRITE 30,x,y,16,1
+    SPRITE 31,x+16,y,17,1
+    SPRITE 32,x+32,y,18,1
+
+    REM Position platform 2 [Sprites 33-34]
+    x=150: y=120
+    SPRITE 33,x,y,19,1
+    SPRITE 34,x+16,y,20,1
+
+    REM Position platform 3 [Sprites 35-37]
+    x=220: y=75
+    SPRITE 35,x,y,16,1
+    SPRITE 36,x+16,y,17,1
+    SPRITE 37,x+32,y,18,1
 ENDPROC
 
 DEFPROC Aliens()
@@ -254,21 +287,20 @@ DEFPROC JetManHitShip()
 ENDPROC
 
 DEFPROC FuelHitShip()
-    REM Only carry on if the fuel is dropping
+    REM Only carry on if the fuel is dropping over the spaceship
     IF fuelCarry <> 2 THEN ENDPROC
 
     REM Sprite is the ship pattern
     LOCAL %s:%s=%i/2
     LOCAL %p:%p=%i+25
 
-    REM If fuel is dropping switch to the ship sprite with fuel in it and hide the fuel
+    REM Switch to the ship sprite with fuel in it and hide the fuel
     SPRITE %s+20,%b,%e-(16*s),%p,1
     SPRITE 2,0,0,21,0
     fuelCarry=0
     %i=%i+1
     gameState=gameState+1
 ENDPROC
-
 
 DEFPROC HitFuel()
     PRINT AT 0,0;"Boom!"
