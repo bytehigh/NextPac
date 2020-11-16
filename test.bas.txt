@@ -98,6 +98,7 @@ REPEAT
 
     REM carry out actions relating to the current game state
     PROC stateAction()
+    SPRITE MOVE
 
     REM check if Alien has hit a platform. Print statements for debug
     hitPlatform=% SPRITE OVER (5,30 TO 37)
@@ -105,7 +106,7 @@ REPEAT
 
     REM check if Jetman has flown over or touched the spaceship
     %t=fuelCarry
-    IF % SPRITE OVER (0,20 TO 22) THEN PROC JetManHitShip(): ELSE IF %x=b AND t=1 THEN PROC DropFuel(%x,%y): fuelCarry=2
+    IF % SPRITE OVER (0,20 TO 22) THEN PROC JetManHitShip(): ELSE IF %x=b AND t=1 THEN PROC DropFuel(%x,%y):fuelCarry=2
 
     REM check if Jetman has touched the fuel
     %t=fuelCarry
@@ -116,22 +117,26 @@ REPEAT
     PRINT AT 4,0;%z
     IF %z=0 THEN PRINT AT 4,4;"!": ELSE PRINT AT 4,4;" "
 
-    REM Check keypresses
-    IF % IN 57342& BIN 0000010 =0 THEN IF %z=0 THEN PROC MoveLeft()
-REM : ELSE IF %z > 0 THEN %x=%x+(s*2)
-    IF % IN 57342& BIN 0000001 =0 THEN IF %z=0 THEN PROC MoveRight()
-REM : ELSE IF %z > 0 THEN %x=%x-(s*2)
-
-rem    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(): ELSE IF %z > 0 THEN %x=%x-(s*2)
-    rem IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
-    IF % IN 32766& BIN 0000001 =0 THEN PROC FlyUp(): ELSE IF %y+16 > SPRITE AT (z,1) THEN PROC FlyDown()
-
-
-
-    SPRITE MOVE
+    PROC CheckKeys()
 
 REPEAT UNTIL INKEY$ ="q"
 STOP
+
+DEFPROC CheckKeys()
+    REM Check keypresses
+    IF % IN 57342& BIN 0000010 =0 THEN PROC MoveLeft(%z)
+
+
+    REM : ELSE IF %z > 0 THEN %x=%x+(s*2)
+    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(%z)
+    REM : ELSE IF %z > 0 THEN %x=%x-(s*2)
+
+    rem    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(): ELSE IF %z > 0 THEN %x=%x-(s*2)
+    rem IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
+    IF % IN 32766& BIN 0000001 =0 THEN IF %z=0 THEN PROC FlyUp(): ELSE IF %y+16 > SPRITE AT (z,1) THEN IF %z=0 THEN PROC FlyDown()
+
+ENDPROC
+
 
 DEFPROC stateAction()
     %f=40
@@ -171,7 +176,9 @@ DEFPROC SetupLevel()
     %i=0: ; First ship fuel pattern
 ENDPROC
 
-DEFPROC MoveLeft()
+DEFPROC MoveLeft(hit)
+    IF hit=1 THEN ENDPROC
+
     %x=%x-s
 
     IF %d=0 THEN %d=1
@@ -179,7 +186,9 @@ DEFPROC MoveLeft()
     IF %a=k THEN %a=0
 ENDPROC
 
-DEFPROC MoveRight()
+DEFPROC MoveRight(hit)
+    IF hit=1 THEN ENDPROC
+
     %x=%x+s
 
     IF %d=1 THEN %d=0
