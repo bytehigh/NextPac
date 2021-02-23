@@ -1,14 +1,23 @@
 #autoline 10,10
+#define FALSE=0
+#define TRUE=1
+#define LEFT=1
+#define RIGHT=0
+#define SPRITESIZE=16
+#define PIXELS=4
+#define FLY=1
+#define WALK=0
+#define GROUNDY=200
 
 RUN AT 3
 PROC InitialisePlayfield()
 
-%h=16: ;Height/width of sprites
+%h=#SPRITESIZE: ;Height/width of sprites
 %a=0: ;Current frame of animation
-%d=0: ;Direction - 0=right; 1=left
-%u=0: ;Flying? 0=false, walking; 1=true, flying 
+%d=#LEFT: ;Direction - 0=right; 1=left
+%u=#WALK: ;Flying? 0=false, walking; 1=true, flying 
 %k=4: ;Number of keyframes of animation
-%s=4: ;Number of pixels to move each time
+%s=#PIXELS: ;Number of pixels to move each time
 
 %f=0: ;Fuel x position
 %g=0: ;Fuel y position
@@ -17,22 +26,20 @@ PROC InitialisePlayfield()
 %b=190: ;Ship x position
 %c=0: ;Ship y position
 
-%e=200: ;Ground level for sprites
-
 %x=50: ;Initial Jetman X position
 %y=194: ;Initial Jetman Y position
 
-fuelCarry=0
-alien=0
+fuelCarry=#FALSE
+alien=#FALSE
 
 REM Game states - TODO add power-ups (e.g. radioactive)
 gameState=0
-DIM s(14)
-DIM o(14)
-o(1)=21
-o(2)=22
-o(3)=23
-o(4)=20
+;DIM s(14)
+;DIM o(14)
+;o(1)=21
+;o(2)=22
+;o(3)=23
+;o(4)=20
 
 REM 0 = ship part 1
 REM 1 = ship part 2
@@ -74,6 +81,8 @@ PROC SetupLevel()
 
 REM Game loop
 REPEAT
+    PROC CheckKeys()
+
     %o=%u*(k*2): REM This is the pattern offset to the next Sprite
     %z=%d*8+1: REM Work out the correct sprite flags (rotation based on left or right direction) 
 
@@ -82,7 +91,8 @@ REPEAT
     SPRITE 0,%x,%y,%a+o,%z,0
     REM Bottom of Jetman, relative sprite
     REM SPRITE 1,%x,%y+h,%a+o+1,%z
-    SPRITE -1,0,%h,1,%z,2 
+;    SPRITE -1,0,%h,1,%z,2 
+    SPRITE -1,0,%h,1,%z,3
 
     PROC Aliens()
 
@@ -100,7 +110,7 @@ REPEAT
     PROC stateAction()
     SPRITE MOVE
 
-    REM check if Alien has hit a platform. Print statements for debug
+    REM check if Alien has hit a platform (returns sprite number of collision)
     hitPlatform=% SPRITE OVER (5,30 TO 37)
     IF hitPlatform THEN PROC PlatformCrash(hitPlatform)
 
@@ -112,40 +122,25 @@ REPEAT
     %t=fuelCarry
     IF %t=0 AND SPRITE OVER (0,2) THEN PROC HitFuel()
 
-    REM check if Jetman has hit a platform. Print statements for debug
-    %z=% SPRITE OVER (0,30 TO 37)
-    PRINT AT 4,0;%z
-    IF %z=0 THEN PRINT AT 4,4;"!": ELSE PRINT AT 4,4;" "
-
-    PROC CheckKeys()
-
+    REM check if Jetman has hit a platform.
+    REM Print statements for debug
+    %i=% SPRITE OVER (0,30 TO 37, 0, 1)
+    PRINT AT 4,0;%i
+    IF %i=0 THEN PRINT AT 4,4;"!": ELSE PRINT AT 4,4;" "
+    ;IF %i=0 THEN %u=1
+    IF %i > 0 THEN PROC PlatformHit(%i)
 REPEAT UNTIL INKEY$ ="q"
 STOP
 
-DEFPROC CheckKeys()
-    REM Check keypresses
-    IF % IN 57342& BIN 0000010 =0 THEN PROC MoveLeft(%z)
-
-
-    REM : ELSE IF %z > 0 THEN %x=%x+(s*2)
-    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(%z)
-    REM : ELSE IF %z > 0 THEN %x=%x-(s*2)
-
-    rem    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(): ELSE IF %z > 0 THEN %x=%x-(s*2)
-    rem IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
-    IF % IN 32766& BIN 0000001 =0 THEN IF %z=0 THEN PROC FlyUp(): ELSE IF %y+16 > SPRITE AT (z,1) THEN IF %z=0 THEN PROC FlyDown()
-
-ENDPROC
-
-
 DEFPROC stateAction()
+    REM Set fuel x position. TODO: replace with something that selects a random-ish position
     %f=40
 
-    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO %e STEP 1 RUN ,22,2,0,0:gameState=1: ENDPROC
+    IF gameState=0 THEN SPRITE 20,%b,%c,22,1: SPRITE CONTINUE 20,%b,%c TO #GROUNDY STEP 1 RUN ,22,2,0,0:gameState=1: ENDPROC
     IF gameState=1 THEN IF % SPRITE AT (20,1)=e THEN gameState=2: ENDPROC
-    IF gameState=2 THEN SPRITE 21,%b,%c,23,1: SPRITE CONTINUE 21,%b,%c TO %e-16 STEP 1 RUN ,23,2,0,0: gameState=3: ENDPROC
+    IF gameState=2 THEN SPRITE 21,%b,%c,23,1: SPRITE CONTINUE 21,%b,%c TO #GROUNDY-16 STEP 1 RUN ,23,2,0,0: gameState=3: ENDPROC
     IF gameState=3 THEN IF % SPRITE AT (21,1)=(e-16) THEN gameState=4: ENDPROC
-    IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO %e-32 STEP 1 RUN ,24,2,0,0: gameState=5: ENDPROC
+    IF gameState=4 THEN SPRITE 22,%b,%c,24,1: SPRITE CONTINUE 22,%b,%c TO #GROUNDY-32 STEP 1 RUN ,24,2,0,0: gameState=5: ENDPROC
     IF gameState=5 THEN IF % SPRITE AT (22,1)=(e-32) THEN gameState=6: ENDPROC
     IF gameState=6 THEN PROC DropFuel(%f,%g):gameState=gameState+1: ENDPROC
     REM When gameState is 7 we're waiting for Jetman to drop the fuel over the ship, gameState is then incremented in HitShip()
@@ -176,22 +171,44 @@ DEFPROC SetupLevel()
     %i=0: ; First ship fuel pattern
 ENDPROC
 
+DEFPROC CheckKeys()
+    REM Check keypresses
+    REM Left key pressed
+    REM If Jetman is facing right
+    IF % IN 57342& BIN 0000010 =0 THEN IF %i=0 THEN PROC MoveLeft(%i)
+
+    REM : ELSE IF %z > 0 THEN %x=%x+(s*2)
+    REM Right key pressed
+    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(%i)
+    REM : ELSE IF %z > 0 THEN %x=%x-(s*2)
+
+    rem    IF % IN 57342& BIN 0000001 =0 THEN PROC MoveRight(): ELSE IF %z > 0 THEN %x=%x-(s*2)
+    REM IF % IN 32766& BIN 0000001 =0 THEN %y=%y-s: PROC FlyUp(): ELSE PROC FlyDown()
+ 
+    REM SPACE (JET) key pressed then if no platform hit then Fly Up,
+    REM otherwise if SPACE not pressed and the bottom of Jetman is lower than the platform Jetman just hit (%z) then
+    ;IF % IN 32766& BIN 0000001 =0 THEN IF %z=0 THEN PROC FlyUp(): ELSE IF %y+32 > SPRITE AT (z,1) THEN IF %z=0 THEN PROC FlyDown()
+    ;IF % IN 32766& BIN 0000001 =0 THEN IF %i=0 THEN PROC FlyUp(): ELSE PROC FlyDown()
+    IF % IN 32766& BIN 0000001 =0 THEN PROC FlyUp(): ELSE PROC FlyDown()
+
+ENDPROC
+
 DEFPROC MoveLeft(hit)
-    IF hit=1 THEN ENDPROC
+    IF hit>0 THEN ENDPROC
 
     %x=%x-s
 
-    IF %d=0 THEN %d=1
+    IF %d=#RIGHT THEN %d=#LEFT
     %a=%a+2
     IF %a=k THEN %a=0
 ENDPROC
 
 DEFPROC MoveRight(hit)
-    IF hit=1 THEN ENDPROC
+    IF hit>0 THEN ENDPROC
 
     %x=%x+s
 
-    IF %d=1 THEN %d=0
+    IF %d=#LEFT THEN %d=#RIGHT
     %a=%a+2
     IF %a=k THEN %a=0
 ENDPROC
@@ -212,13 +229,126 @@ ENDPROC
 
 DEFPROC FlyUp()
     %y=%y-s 
-    %u=1
+    %u=#FLY
     IF %y <= 32 THEN %y=32
 ENDPROC
 
 DEFPROC FlyDown()
+    REM If Jetman is flying (%u > 0) then gravity moves Jetman's Y position down by the alloted number of pixels (%s)
     IF %u THEN %y=%y+s
-    IF %y>=(e-6) THEN %u=0: %y=%e-6
+    REM If Jetman reaches platform 1 then set his state to walking and make sure his feet are on the platform
+    %t=% SPRITE OVER (1,30 TO 32)
+    %r=% SPRITE AT (30,0)
+    %w=% SPRITE AT (30,1)
+print at 12,0; %t; " "; " px:"; %r; " py:"; %w; " y:"; %y; " x:"; %x; "  "
+    REM If Jetman has hit platform 1 then switch to walking
+    IF %t > 0 THEN %u=#WALK: ENDPROC
+
+    %t=% SPRITE OVER (1,33 TO 34)
+    %r=% SPRITE AT (33,0)
+    %w=% SPRITE AT (33,1)
+print at 13,0; %t; " "; " px:"; %r; " py:"; %w; " y:"; %y; " x:"; %x; "  "
+    REM If Jetman has hit platform 2 then switch to walking
+    IF %t > 0 THEN %u=#WALK: ENDPROC
+
+    %t=% SPRITE OVER (1,35 TO 37)
+    %r=% SPRITE AT (35,0)
+    %w=% SPRITE AT (35,1)
+print at 14,0; %t; " "; " px:"; %r; " py:"; %w; " y:"; %y; " x:"; %x; "  "
+    REM If Jetman has hit platform 3 then switch to walking
+    IF %t > 0 THEN %u=#WALK: ENDPROC
+
+    REM If Jetman reaches the ground (e-6) then set his state to walking and make sure his feet are on the ground
+    IF %y >= (e-6) THEN %u=#WALK: %y=#GROUNDY-6: ELSE %u=#FLY
+ENDPROC
+
+DEFPROC Aliens()
+rem    IF alienDeath THEN sprite continue 5,,
+    IF alien=#TRUE THEN ENDPROC
+
+    SPRITE 5,16,40,31,1
+    SPRITE CONTINUE 5,16 TO 304 STEP 1 RUN ,40 TO 192 STEP 1 RUN ,31 TO 32,2,1,0
+    alien=#TRUE
+ENDPROC
+
+DEFPROC PlatformHit(pSprite)
+    plat1left=%SPRITE AT (30,0)
+    plat1right=% SPRITE AT (32,0)+#SPRITESIZE
+    plat1top=%SPRITE AT (30,1)
+    jetx=%x
+    jety=%y
+
+    IF %d=#RIGHT THEN IF pSprite=30 THEN IF jetx+#SPRITESIZE >= plat1left THEN %x=plat1left-#SPRITESIZE
+    IF %d=#LEFT THEN IF pSprite=32 THEN IF jetx < plat1right+#PIXELS THEN %x=plat1right
+
+    IF %u=#FLY THEN IF pSprite >= 30 AND psprite <= 32 THEN IF jety < plat1top+10 THEN %y=plat1top+12
+
+
+    ;PRINT AT 0,0;"Bash!"
+ENDPROC
+
+REM Alien hits platform and explodes
+DEFPROC PlatformCrash(platform)
+    PRINT AT 0,0;"KERANNGGG!"
+    alienDeath=1
+ENDPROC
+
+DEFPROC JetManHitShip()
+    REM Only carry on if the fuel is dropping
+    IF fuelCarry <> #TRUE THEN ENDPROC
+
+    REM Sprite is the ship pattern
+    LOCAL %s:%s=%i/2
+    LOCAL %p:%p=%i+25
+
+    REM If Jetman is carrying the fuel switch to the ship sprite with fuel in it and hide the fuel
+    SPRITE %s+20,%b,#GROUNDY-(16*s),%p,1
+    SPRITE 2,0,0,21,0
+    fuelCarry=#FALSE
+    %i=%i+1
+    gameState=gameState+1
+ENDPROC
+
+DEFPROC FuelHitShip()
+    REM Only carry on if the fuel is dropping over the spaceship
+    IF fuelCarry <> 2 THEN ENDPROC
+
+    REM Sprite is the ship pattern
+    LOCAL %s:%s=%i/2
+    LOCAL %p:%p=%i+25
+
+    REM Switch to the ship sprite with fuel in it and hide the fuel
+    SPRITE %s+20,%b,#GROUNDY-(16*s),%p,1
+    SPRITE 2,0,0,21,0
+    fuelCarry=0
+    %i=%i+1
+    gameState=gameState+1
+ENDPROC
+
+DEFPROC HitFuel()
+    PRINT AT 0,0;"Boom!"
+    REM Stop the fuel falling (even it it's already stopped) and make it relative to Jetman
+    SPRITE CONTINUE 2,,STOP,21
+    SPRITE -2,0,10,21,1,0
+    fuelCarry=1
+ENDPROC
+
+DEFPROC DropFuel(%x,%y)
+    IF fuelCarry=2 THEN ENDPROC
+
+    SPRITE 2,%x,%y,21,1
+    SPRITE CONTINUE 2,%x,%y TO #GROUNDY STEP 1 RUN ,21,2,0,0
+ENDPROC
+
+DEFPROC TakeOff()
+    SPRITE CONTINUE 20,%b,%c TO #GROUNDY STEP -1 RUN ,,BIN 00000011
+    SPRITE CONTINUE 21,%b,%c TO #GROUNDY-16 STEP -1 RUN ,,BIN 00000011
+    SPRITE CONTINUE 22,%b,%c TO #GROUNDY-32 STEP -1 RUN ,,BIN 00000011
+    gameState=gameState+1
+ENDPROC
+
+DEFPROC CollideActions()
+    PRINT AT 1,0;"collided"
 ENDPROC
 
 DEFPROC InitialisePlayfield()
@@ -243,96 +373,38 @@ DEFPROC InitialisePlayfield()
     LOCAL x
     LOCAL y
     REM Position platform 1 [Sprites 30-32]
-    x=60: y=90
+    x=60: y=86
     SPRITE 30,x,y,16,1
     SPRITE 31,x+16,y,17,1
     SPRITE 32,x+32,y,18,1
 
     REM Position platform 2 [Sprites 33-34]
-    x=150: y=120
+    x=150: y=118
     SPRITE 33,x,y,19,1
     SPRITE 34,x+16,y,20,1
 
     REM Position platform 3 [Sprites 35-37]
-    x=220: y=75
+    x=220: y=72
     SPRITE 35,x,y,16,1
     SPRITE 36,x+16,y,17,1
     SPRITE 37,x+32,y,18,1
 ENDPROC
 
-DEFPROC Aliens()
-rem    IF alienDeath THEN sprite continue 5,,
-    IF alien=1 THEN ENDPROC
-
-    SPRITE 5,16,40,31,1
-    SPRITE CONTINUE 5,16 TO 304 STEP 1 RUN ,40 TO 192 STEP 1 RUN ,31 TO 32,2,1,0
-    alien=1
-ENDPROC
-
-DEFPROC PlatformHit()
-    PRINT AT 0,0;"Bash!"
-ENDPROC
-
-REM Alien hits platform and explodes
-DEFPROC PlatformCrash(platform)
-    PRINT AT 0,0;"KERANNGGG!"
-    alienDeath=1
-ENDPROC
-
-DEFPROC JetManHitShip()
-    REM Only carry on if the fuel is dropping
-    IF fuelCarry <> 1 THEN ENDPROC
-
-    REM Sprite is the ship pattern
-    LOCAL %s:%s=%i/2
-    LOCAL %p:%p=%i+25
-
-    REM If Jetman is carrying the fuel switch to the ship sprite with fuel in it and hide the fuel
-    SPRITE %s+20,%b,%e-(16*s),%p,1
-    SPRITE 2,0,0,21,0
-    fuelCarry=0
-    %i=%i+1
-    gameState=gameState+1
-ENDPROC
-
-DEFPROC FuelHitShip()
-    REM Only carry on if the fuel is dropping over the spaceship
-    IF fuelCarry <> 2 THEN ENDPROC
-
-    REM Sprite is the ship pattern
-    LOCAL %s:%s=%i/2
-    LOCAL %p:%p=%i+25
-
-    REM Switch to the ship sprite with fuel in it and hide the fuel
-    SPRITE %s+20,%b,%e-(16*s),%p,1
-    SPRITE 2,0,0,21,0
-    fuelCarry=0
-    %i=%i+1
-    gameState=gameState+1
-ENDPROC
-
-DEFPROC HitFuel()
-    PRINT AT 0,0;"Boom!"
-    REM Stop the fuel falling (even it it's already stopped) and make it relative to Jetman
-    SPRITE CONTINUE 2,,STOP,21
-    SPRITE -2,0,10,21,1,0
-    fuelCarry=1
-ENDPROC
-
-DEFPROC DropFuel(%x,%y)
-    IF fuelCarry=2 THEN ENDPROC
-
-    SPRITE 2,%x,%y,21,1
-    SPRITE CONTINUE 2,%x,%y TO %e STEP 1 RUN ,21,2,0,0
-ENDPROC
-
-DEFPROC TakeOff()
-    SPRITE CONTINUE 20,%b,%c TO %e STEP -1 RUN ,,BIN 00000011
-    SPRITE CONTINUE 21,%b,%c TO %e-16 STEP -1 RUN ,,BIN 00000011
-    SPRITE CONTINUE 22,%b,%c TO %e-32 STEP -1 RUN ,,BIN 00000011
-    gameState=gameState+1
-ENDPROC
-
-DEFPROC CollideActions()
-    PRINT AT 1,0;"collided"
-ENDPROC
+;a = animation frame (current)
+;b = Ship x position
+;c = Ship y position
+;d = Horizontal direction
+;e = <free>
+;f = Fuel x position
+;g = Fuel y position
+;i = <free>
+;j = <free>
+;k = number of animation keyframes
+;l = <free>
+;m = <free>
+;n = <free>
+;o = offset to next sprite
+;p = Power-up x position
+;q = Power-up y position
+;t = touched fuel false/true
+;z = Sprite flags
